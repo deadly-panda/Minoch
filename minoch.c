@@ -6,23 +6,23 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>													//allows functions to accept an indefinite number of arguments	
+#include <stdarg.h>							//allows functions to accept an indefinite number of arguments	
 #include <string.h>
-#include <ctype.h>													// playing with characters
+#include <ctype.h>							// playing with characters
 #include <unistd.h>
-#include <termios.h>	 												// library for terminal stuff
-#include <errno.h>													// for error handling
-#include <fcntl.h>													//
-#include <sys/ioctl.h>													//Input Output Control
+#include <termios.h>	 						// library for terminal stuff
+#include <errno.h>							// for error handling
+#include <fcntl.h>							//file control options
+#include <sys/ioctl.h>							//Input Output Control
 #include <sys/types.h>		
 #include <time.h>											
 
 
 /**** Defines ****/ 
 
-#define MINOCH_VERSION "0.0.1"
-#define MINOCH_TAB_STOP 8
-#define MINOCH_QUIT_TIMES 2
+#define MINOCH_VERSION "0.0.1"						//version 
+#define MINOCH_TAB_STOP 8				
+#define MINOCH_QUIT_TIMES 2						// nb of times pressing ctrl-q to exit
 
 #define CTRL_KEY(k) ((k) & 0x1f)					
 // 0x1f = 00011111  : why we use and 0x1f becaus ctrl+key in terminal does the same, it takes binary of the key makes bit 5,6,7 to zero and sends the resulting byte  
@@ -54,20 +54,20 @@ typedef struct erow {					//editor row structure that will store our  txt lines
 
 
 struct editorConfig{
-	int cx, cy;												// cursor x, y positions
-	int rx;													// index for the render field (the tabs field)	
-	int rowoff;												//row offset for vertical scrolling	
-	int coloff;												// columns offset for horizontal scrolling
+	int cx, cy;								// cursor x, y positions
+	int rx;									// index for the render field (the tabs field)	
+	int rowoff;								//row offset for vertical scrolling	
+	int coloff;								// columns offset for horizontal scrolling
 	int screenrows;									
 	int screencols;
-	int numrows;												//number of rows to be written
- 	erow *row;												// editor row : a struct that holds text row ( the characters and the
-	int dirty;												// variable to warn us if file's been changed or not	
+	int numrows;								//number of rows to be written
+ 	erow *row;								// editor row : a struct that holds text row ( the characters and the
+	int dirty;								// variable to warn us if file's been changed or not	
 	char *filename;
-	char statusmsg[80];											//status msg (we'll use it for searching in the file) 
-	time_t statusmsg_time;											//we will erase the message after few seconds 
+	char statusmsg[80];							//status msg (we'll use it for searching in the file) 
+	time_t statusmsg_time;							//we will erase the message after few seconds 
 
-	struct termios original_termios;									// save original terminal attributes..
+	struct termios original_termios;					// save original terminal attributes..
 };
 
 
@@ -84,18 +84,18 @@ void editorSetStatusMessage(const char *fmt, ...);
 
 /**** Terminal ****/
 
-void die(const char *s){										// for error handling; C programms set the global  variable
+void die(const char *s){							// for error handling; C programms set the global  variable
 	write(STDOUT_FILENO, "\x1b[2J", 4);	
 	write(STDOUT_FILENO, "\x1b[H", 3);
 	
-	perror(s);										// errno to indicate the error; perror looks at the global errno and prints a discriptive error msg
+	perror(s);								// errno to indicate the error; perror looks at the global errno and prints a discriptive error msg
 	exit(1);
 	}
 
 
 
-void disableRawMode(){												//function that disables raw mode; we will use it right before leaving the editor.
-	if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.original_termios) == -1 )					// set attributes of terminal back to original ones .. if we fail we throw error and die 
+void disableRawMode(){										//function that disables raw mode; we will use it right before leaving the editor.
+	if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.original_termios) == -1 )			// set attributes of terminal back to original ones .. if we fail we throw error and die 
 	   die("tcsetattr");	
 }	
 
@@ -103,7 +103,7 @@ void disableRawMode(){												//function that disables raw mode; we will use
 
 
 // we get terminal attributes, modify them, then pass them back
-void enableRawMode(){  														//function that will enable raw mode ! 
+void enableRawMode(){  												//function that will enable raw mode ! 
 	
 	if(tcgetattr(STDIN_FILENO, &E.original_termios) == -1) die ("tcgetattr");
 	atexit(disableRawMode);
@@ -125,7 +125,7 @@ void enableRawMode(){  														//function that will enable raw mode !
 	}
 
 
-int editorReadKey(){												// function to read the keypresses
+int editorReadKey(){										// function to read the keypresses
 	int nread;
 	char c;
 	while((nread = read(STDIN_FILENO, &c, 1)) != 1){
