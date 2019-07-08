@@ -78,8 +78,8 @@ struct editorConfig E;
 /// Prototype : so we can use functions defined later in the file, wherever we want !
 
 void editorSetStatusMessage(const char *fmt, ...);
-
-
+void editorRefreshScreen();
+void *editorPrompt(char *prompt);
 
 
 /**** Terminal ****/
@@ -394,7 +394,13 @@ FILE *fp = fopen(filename, "r");
 
 
 void editorSave(){
-	if(E.filename == NULL) return;
+	if(E.filename == NULL){
+		E.filename = editorPrompt("Save as : %s (ESC to cancel)");
+		if(E.filename == NULL){
+			editorSetStatusMessage("Save Canceled");
+			return;
+		}
+	}
 
 	int len;
 	char *buf = editorRowsToString(&len);
@@ -590,6 +596,67 @@ void editorSetStatusMessage(const char *fmt, ...) {						// this is a "variadic"
 
 
 /**** Input ****/
+
+char *editorPrompt(char *prompt){	//function that will ask  the user to enter namefile to be saved as 
+
+	size_t bufsize = 128;				
+	char *buf = malloc(bufsize);					//allocate memory for the filename entered by the user; stored in a buffer first 
+	
+	size_t buflen =0;						// initialize buffer length
+	buf[0] = '\0';							// initialize buffer  with null byte
+
+	while(1){
+		editorSetStatusMessage(prompt, buf);
+		editorRefreshScreen();
+
+		int c = editorReadKet();				// wait for key press
+		if(c == BACKSPACE || c == CTRL_KEY('h')){		// we let the user delete from filename he is entering 
+			if(buflen != 0) buf[--buflen] = '\0';		// we test if he already input anything then start putting null byte decreasingly when he's deleting
+		}else if(c == '\x1b'){					// when input is cancelled 
+			editorSetStatusMessage("");			// we clear status message
+			free(buf);					// and free the buffer
+			return NULL;
+		}else if(c == '\r'){					// when user presses "enter"
+			if(buflen != 0){				// if the input is not empty 
+				editorSetStatusMessage("");		// we clear the status message
+				return buf;				// and return the user's input 
+			}			
+		}else if (!iscntrl(c) && c < 128){			// less than 128 means that it"s not a special keys; range of chars is 128  
+			if(buflen == bufsize -1){			// if the buffer reachers it s max allocated space
+				bufsize *= 2;				// we double the bufsize and
+				buf = realloc(buf, bufsize);		// realloc memory with new size
+			}
+		buf[buflen++] = c;					// when user input a char we append it to the buffer
+		buf[buflen] = '\0';					// we make shure that buffer ends with the null byte becaus other functions needs to know where the string ends 
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void editorMoveCursor(int key){					// function that maps arrow keys to moving x,y positions of cursor
 	
